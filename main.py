@@ -3,17 +3,11 @@ warnings.filterwarnings('ignore')
 
 import os
 import tensorflow as tf
+from tensorflow.keras.models import load_model
+import numpy as np
 
 from utils import * 
 from models import *
-from music_config import music_config
-
-sr          = music_config['sr']
-win         = music_config['win']
-stride      = music_config['stride']
-target_size = music_config['target_size']
-split_rate  = music_config['split_rate']
-full_len    = music_config['full_len']
 
 if __name__ == "__main__":
     # if gpu ready
@@ -35,6 +29,14 @@ if __name__ == "__main__":
     # prepare data
     # 1. load all data
     # 2. split to Train & Valid
-    # 3. normalize via L2
-    x_train_norm, y_train, x_valid_norm, y_valid = load_data(data_dir, split_thr=0.9)
+    x_train, y_train, x_valid, y_valid = load_data(data_dir, split_thr=split_thr)
+
+    # train the DNN
+    model = model_dnn(x_train, y_train, x_valid, y_valid)
+
+    # music generate
+    # out_seq = music_generate(data_dir, model_version, start_seq, sr=sr, full_len=full_len, target_size=target_size)
+
+    
+
 

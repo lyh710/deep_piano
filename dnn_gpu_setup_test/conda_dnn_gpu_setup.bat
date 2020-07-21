@@ -44,5 +44,5 @@ call type test.result
 :: and install env specific packages (project specific), and add env to jupyter kernel
 call conda deactivate
 call conda activate %env_name%
-call pip install librosa pydub ffmpeg numpy pandas seaborn sklearn
+call pip install librosa numba==0.48 pydub ffmpeg numpy pandas seaborn sklearn progressbar2
 call python -m ipykernel install --user --name %env_name%

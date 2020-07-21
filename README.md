@@ -13,18 +13,22 @@ Given a few piano notes as input (around 10 seconds), the program will generate 
 1. Music format ready:
     - convert mp3 to wav using ffmpeg: ffmpeg_mp3_to-wav.bat
     - ffmpeg executable file should be downloaded for win64 and placed in .\FFmpeg\bin\ffmpeg.exe
-    Note the conversion to wav is only required due to the piano music available happened to be mp3 format.
+    - Note the conversion to wav is only required due to the piano music available happened to be mp3 format.
 
 2. Music to numeric data:
     - Python package librosa is employed, which will convert wav file into 1-D numpy array, given sample_rate (sr) as hyper-parameter
     - music length (in seconds) x sample_rate = numpy array length (1-D)
 
 3. DNN based on Data
-    - Use the last 10 seconds of music to generate (predict) the next music note
-    - Given sample_rate=sr, last 10 seconds of music will involve 1xsr numerical samples, meaning we are using 10xsr last samples to generate the next 1 sample
+    - train towards the scenario of using the last N to generate the next 1 sample
+    - LSTM + Dense
+    - Loss = mae
 
 4. DNN to generate music
+    - short starting piece of piano melody (random segment from hold-out piece)
+
 5. Data to Music
+    - librosa
 
 ## Reference
 1. https://www.coursera.org/learn/nlp-sequence-models by Andrew Ng from deeplearning.ai.
