@@ -42,6 +42,31 @@ def mp3_to_wave(data_dir, bat_dir=os.path.join(os.getcwd(),'ffmpeg_mp3_to_wav.ba
     
     subprocess.call([bat_dir, data_dir])
 
+def gen_scaler(data_dir):
+    '''
+    randomly select one music file from 'train' folder, to fit the standariser
+    which will be applied to all other music file (train & test) as preparation step
+    
+    note: this is different to standarise each music file to its own min_max,
+          but normalise all music to the random target. 
+          Such way may lead to certain music data still NOT within (0, 1) after normalisation, 
+          but may provide a better cotrast across different music files, that might be helpful for DNN training
+    '''
+
+    target_fn  = np.random.choice([fn for fn in os.listdir(os.path.join(data_dir, 'train')) if fn.endswith('.wav')])
+    target_dir = os.path.join(data_dir, 'train', target_fn)
+
+    x,_        = librosa.load(target_dir, sr=sr)
+
+    scaler     = MinMaxScaler()
+    scaler.fit(x.reshape(-1,1))
+
+    fn     = os.path.join(data_dir,'train','scaler.pkl')
+    if os.path.exists(fn):
+        os.remove(fn)
+    with open(fn, 'wb') as f:
+        pickle.dump(scaler, f, protocol=4)
+
 def split_music_train_test(data_dir):
     '''
     Input:
@@ -80,13 +105,27 @@ def split_music_train_test(data_dir):
         dst_dir = os.path.join(train_dir, fn)
         shutil.move(src_dir, dst_dir)
 
-def data_normalise(x):
+    # generate the (0, 1) range standariser with one random train file
+    gen_scaler(data_dir)
+
+def data_normalise(data_dir, x):
     '''
     scale to (0,1)
     '''
-    scaler = MinMaxScaler()
-    x_norm = scaler.fit_transform(x.reshape(-1,1))
-    return x_norm.flatten()
+    # scaler = MinMaxScaler()
+    # x_norm = scaler.fit_transform(x.reshape(-1,1))
+
+    # scaler
+    fn     = os.path.join(data_dir,'train','scaler.pkl')
+    if not os.path.exists(fn):
+        print('scaler not available, check')
+        exit()
+    else:
+        with open(fn, 'rb') as f:
+            scaler = pickle.load(f)
+            x_norm = scaler.transform(x.reshape(-1,1))
+
+            return x_norm.flatten()
 
 def shuffle_together(a,b):
     '''
@@ -97,7 +136,7 @@ def shuffle_together(a,b):
     a, b = zip(*c) 
     return list(a), list(b)
 
-def music_to_x_y(fn, norm_data=norm_data):
+def music_to_x_y(data_dir, fn, norm_data=norm_data):
     '''
     Input:
     - fn: full path to one wav file
@@ -120,7 +159,7 @@ def music_to_x_y(fn, norm_data=norm_data):
     dataset,_ = librosa.load(fn, sr=sr)
 
     if norm_data:
-        dataset = data_normalise(dataset)
+        dataset = data_normalise(data_dir, dataset)
     
     # the first and last 10 seconds is to be ignored, music should be longer than 20 seconds
     if (dataset.shape[0] == math.ceil(music_len*sr)) & (music_len > 20):
@@ -161,7 +200,7 @@ def train_to_x_y_all(data_dir):
     y = []
     for fn in os.listdir(os.path.join(data_dir,'train')):
         if fn.endswith('.wav'):
-            data, labels = music_to_x_y(os.path.join(data_dir,'train',fn))
+            data, labels = music_to_x_y(data_dir, os.path.join(data_dir,'train',fn))
             if (data.shape[0]>0) & (data.shape[0] == labels.shape[0]):
                 x.append(data)
                 y.append(labels)
