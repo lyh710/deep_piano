@@ -22,7 +22,7 @@ Given a few piano notes as input (around 10 seconds), the program will generate 
 3. DNN based on Data
     - train towards the scenario of using the last N to generate the next 1 sample
     - LSTM + Dense
-    - Loss = mae
+    - Loss = mse
 
 4. DNN to generate music
     - short starting piece of piano melody (random segment from hold-out piece)
