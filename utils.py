@@ -372,7 +372,7 @@ def music_generate(data_dir, model_version, start_seq, sr=sr, full_len=full_len,
     # start_seq
     fn            = os.listdir(os.path.join(data_dir,'test'))[0]
     fn            = os.path.join(data_dir, 'test', fn)
-    x_test,_      = music_to_x_y(fn)
+    x_test,_      = music_to_x_y(data_dir, fn, norm_data=norm_data)
     i_rand        = np.random.choice(x_test.shape[0])
     start_seq     = x_test[i_rand,:]
 

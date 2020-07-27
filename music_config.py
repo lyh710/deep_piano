@@ -13,7 +13,7 @@ music_config = {
                 , 'target_size' : 10
                 , 'norm_data'   : True    
                 , 'split_thr'   : 0.8
-                , 'full_len'    : 180  # 180 seconds = 3 minutes
+                , 'full_len'    : 10  # 180 seconds = 3 minutes
                 , 'lr_start'    : 1e-05
                 , 'batch_size'  : 128
                 , 'epochs'      : 5
