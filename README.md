@@ -14,6 +14,7 @@ Given a few piano notes as input (around 10 seconds), the program will generate 
     - convert mp3 to wav using ffmpeg: ffmpeg_mp3_to-wav.bat
     - ffmpeg executable file should be downloaded for win64 and placed in .\FFmpeg\bin\ffmpeg.exe
     - Note the conversion to wav is only required due to the piano music available happened to be mp3 format.
+    - samples used being performance by Richard Clayderman (https://en.wikipedia.org/wiki/Richard_Clayderman)
 
 2. Music to numeric data:
     - Python package librosa is employed, which will convert wav file into 1-D numpy array, given sample_rate (sr) as hyper-parameter
@@ -22,7 +23,7 @@ Given a few piano notes as input (around 10 seconds), the program will generate 
 3. DNN based on Data
     - train towards the scenario of using the last N to generate the next 1 sample
     - LSTM + Dense
-    - Loss = mae
+    - Loss = mse
 
 4. DNN to generate music
     - short starting piece of piano melody (random segment from hold-out piece)
@@ -36,3 +37,7 @@ Given a few piano notes as input (around 10 seconds), the program will generate 
    https://www.kdnuggets.com/2020/02/audio-data-analysis-deep-learning-python-part-2.html
 3. https://www.tensorflow.org/tutorials/structured_data/time_series
 4. magenta: https://github.com/magenta/magenta
+5. https://towardsdatascience.com/creating-a-pop-music-generator-with-the-transformer-5867511b382a 
+   https://towardsdatascience.com/practical-tips-for-training-a-music-model-755c62560ec2
+   https://towardsdatascience.com/a-multitask-music-model-with-bert-transformer-xl-and-seq2seq-3d80bd2ea08e
+   https://towardsdatascience.com/how-to-remix-the-chainsmokers-with-a-music-bot-6b920359248c
