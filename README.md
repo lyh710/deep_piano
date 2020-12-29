@@ -1,5 +1,5 @@
-# deep_music
-Music generation using deep learning.
+# deep_piano
+Piano music generation using deep learning.
 
 ## Aim
 There are largely 2 ways to generate music: one is to generate the sound waves, the latter is to generate notation (sheet music). We tried the first and failed (https://github.com/lyh710/deep_piano/tree/music_as_time_series), and moved on to the latter as shown here.
