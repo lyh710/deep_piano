@@ -16,8 +16,8 @@ call echo y|conda create --name %env_name% python=3.7.6 tensorflow-gpu
 :: Activate the new env
 call conda activate %env_name%
 
-:: PyTorch 1.4.0
-call pip install torch===1.4.0 torchvision===0.5.0 -f https://download.pytorch.org/whl/torch_stable.html
+:: PyTorch 1.6.0
+call pip install torch===1.6.0 torchvision===0.7.0 -f https://download.pytorch.org/whl/torch_stable.html
 call pip install jupyter
 
 :: deactivate & activate the new env
@@ -44,5 +44,5 @@ call type test.result
 :: and install env specific packages (project specific), and add env to jupyter kernel
 call conda deactivate
 call conda activate %env_name%
-call pip install librosa numba==0.48 pydub ffmpeg numpy pandas seaborn sklearn progressbar2
+call pip install numpy pandas seaborn sklearn progressbar2 librosa numba==0.48 pydub ffmpeg music21 fastai beautifulsoup4
 call python -m ipykernel install --user --name %env_name%
