@@ -1,118 +1,123 @@
+import string, shutil, os, pickle
+
 import numpy as np
+np.random.seed(11)
+
+import pandas as pd
+
 from time import time
-from utils import * 
-import shutil
 
-import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import tensorflow.keras.utils as ku
 from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import TimeDistributed, Conv1D, MaxPool1D, LSTM, Dense, Flatten, Dropout, Bidirectional, BatchNormalization, Lambda
-from tensorflow.keras import optimizers, regularizers
-from tensorflow.keras.callbacks import TensorBoard, Callback, ModelCheckpoint, LambdaCallback, LearningRateScheduler
-from tensorflow.keras.losses import Huber
-from tensorflow import squeeze, expand_dims
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
+from tensorflow.keras import optimizers
 
-def model_base_naive(x):
+def text_2_token_seq(tokenizer, corpus):
     '''
-    use the last know history (x[-1]) to predict the next output
+    In case of tokenizer has been trained, use it to convert corpus into sequences (valid or test)
     '''
-    return x[-1]
-
-def model_base_mean(x):
-    '''
-    use the mean of history (x) to predict the next output
-    '''
-    return np.mean(x)
-
-def model_dnn(x_train, y_train, x_valid, y_valid):
+    input_sequences = []
+    for line in corpus:
+        token_list = tokenizer.texts_to_sequences([line])[0]
+        for i in range(1, len(token_list)):
+            n_gram_sequence = token_list[:i+1]
+            input_sequences.append(n_gram_sequence)
+    return input_sequences
     
-    show_config(music_config)
-
-    # reshape the input tensor (x) to be of shape=(sample, window, 1)
-    x_train = tf.expand_dims(x_train, 2)
-    x_valid = tf.expand_dims(x_valid, 2)
-
-    # specify model version
-    model_version  = 'model.'+str(time())
-
-    # Prepar folder to output model
-    out_dir = os.path.join(os.getcwd(), 'models', model_version)
-    if os.path.isdir(out_dir):
-        shutil.rmtree(out_dir)
-    os.mkdir(out_dir)
-
-    # Callbacks: checkpoint
-    fn = os.path.join(out_dir, model_version+'_checkpoint_epoch.hdf5')
-    checkpoint_epoch = ModelCheckpoint(fn, monitor='val_loss', save_best_only=True, mode = 'min')
-
-    # set Tensorboard
-    tensorboard = TensorBoard(log_dir=os.path.join(os.getcwd(), 'logs', model_version))
-
-    # model architecture
-    model   = Sequential()
-    # model.add(Conv1D(filters=32, kernel_size=(3), activation='relu', kernel_regularizer=regularizers.l2(reg_l2), batch_input_shape=(None, win, 1)))
-    # model.add(Conv1D(filters=32, kernel_size=(3), activation='relu', kernel_regularizer=regularizers.l2(reg_l2)))
-    # model.add(BatchNormalization(axis=2))
-    # model.add(MaxPool1D(pool_size=2))
-    # model.add(Conv1D(filters=64, kernel_size=(3), activation='relu', kernel_regularizer=regularizers.l2(reg_l2)))
-    # model.add(Conv1D(filters=64, kernel_size=(3), activation='relu', kernel_regularizer=regularizers.l2(reg_l2)))
-    # model.add(BatchNormalization(axis=2))
-    # model.add(MaxPool1D(pool_size=2))
-    # model.add(Conv1D(filters=128, kernel_size=(3), activation='relu', kernel_regularizer=regularizers.l2(reg_l2)))
-    # model.add(Conv1D(filters=128, kernel_size=(3), activation='relu', kernel_regularizer=regularizers.l2(reg_l2)))
-    # model.add(BatchNormalization(axis=2))
-    # model.add(MaxPool1D(pool_size=2))
-    # model.add(Conv1D(filters=256, kernel_size=(3), activation='relu', kernel_regularizer=regularizers.l2(reg_l2)))
-    # model.add(Conv1D(filters=256, kernel_size=(3), activation='relu', kernel_regularizer=regularizers.l2(reg_l2)))
-    # model.add(BatchNormalization(axis=2))
-    # model.add(MaxPool1D(pool_size=2))
-    # model.add(Bidirectional(LSTM(256, return_sequences=True, dropout=dropout)))
-    # model.add(Bidirectional(LSTM(128, dropout=dropout)))
-    model.add(Bidirectional(LSTM(100, activation='relu', return_sequences=True), input_shape=(win, 1)))
-    # model.add(LSTM(int(target_size), return_sequences=True, activation='relu'))
-    model.add(Bidirectional(LSTM(100, activation='relu')))
-    # model.add(Dropout(dropout))
-    model.add(Dense(target_size))
-    print(model.summary())
-
-    # optimizer & compile
-    optimizer = optimizers.Adam(learning_rate=lr_start)
-    # optimizer = optimizers.RMSprop(learning_rate=lr_start, clipvalue=clipvalue)
-    model.compile(optimizer=optimizer, loss=loss, metrics=['acc'])
-
-    # train
-    history = model.fit(  x_train
-                        , y_train
-                        , batch_size=batch_size
-                        , epochs=epochs
-                        , validation_data=(x_valid, y_valid)
-                        , verbose=verbose
-                        , callbacks=[checkpoint_epoch, tensorboard])
-
-    # output the model to disk
-    fn = os.path.join(out_dir, model_version+'.hdf5')
-    if os.path.exists(fn):
-        os.remove(fn)
-    model.save(fn)
-
-    # output the history to disk
-    fn = os.path.join(out_dir, model_version+'.history.pkl')
-    if os.path.exists(fn):
-        os.remove(fn)
-    with open(fn, 'wb') as f:
-        pickle.dump(history.history, f)
+def get_sequence_of_tokens(corpus):
+    '''
+    tokenize training corpus into word (n-gram) sequence
+    '''
+    tokenizer = Tokenizer(lower=False, filters='', char_level=False, oov_token='OOV')
+    tokenizer.fit_on_texts(corpus)
     
-    # Save the script
-    src_fn = os.path.join(os.getcwd(), 'models.py')
-    trg_fn = os.path.join(out_dir, 'models.py')
-    if os.path.exists(trg_fn):
-        os.remove(trg_fn)
-    shutil.copy(src_fn, trg_fn)
+    total_words = len(tokenizer.word_index) + 1
+    
+    ## convert data to sequence of tokens 
+    input_sequences = text_2_token_seq(tokenizer, corpus)
+    
+    return tokenizer, input_sequences, total_words
 
-    # Save the config (data)
-    src_fn = os.path.join(os.getcwd(), 'music_config.py')
-    trg_fn = os.path.join(out_dir, 'music_config.py')
-    if os.path.exists(trg_fn):
-        os.remove(trg_fn)
-    shutil.copy(src_fn, trg_fn)
+def generate_padded_sequences(input_sequences, total_words, max_sequence_len):
+    '''
+    generate pair of (input word sequence, next word)
+    '''
+    if max_sequence_len is None: # suggesting it is "train" and need to be inferred from input_sequences
+        max_sequence_len  = max([len(x) for x in input_sequences])
+        
+    input_sequences   = np.array(pad_sequences(input_sequences, maxlen=max_sequence_len, padding='pre'))
+    predictors, label = input_sequences[:,:-1],input_sequences[:,-1]
+    label = ku.to_categorical(label, num_classes=total_words)
+    return predictors, label, max_sequence_len
 
+def data_generator(inputPath, tokenizer, total_words, max_sequence_len, gs=dnn_config['gen_size']):
+    '''
+    data generator which can produce (x,y) pairs with desired batch size against very large raw data file, to avoid Out-Of-Memory issue
+    we expect the tokenizer has been fit
+    '''
+    # leverage Pandas built-in function to produce generator
+    f  = pd.read_csv(inputPath, iterator=True, chunksize=gs)    
+    while True: # generator is supposed to loop infinitely, and the start and stop of epoch will be controlled by steps_per_epoch later on by tf
+        try:
+            corpus                 = f.get_chunk(gs)['dnn_text'].apply(space_punctuation).tolist()
+            input_sequences        = text_2_token_seq(tokenizer, corpus)
+            x, y, max_sequence_len = generate_padded_sequences(input_sequences, total_words, max_sequence_len=max_sequence_len)
+            yield (x, y)
+        except: # if data exhausted, reset to the beginning of the data
+            f  = pd.read_csv(inputPath, iterator=True, chunksize=gs)
+        
+def generate_text(seed_text, tokenizer, model, max_sequence_len, stop_word='GfsStop', max_words=3500, verbose=0):
+    
+    while (seed_text.split(' ')[-1] != stop_word) and (max_words > 0):
+    
+        # tokenizer the seed_text
+        seed_tokens = tokenizer.texts_to_sequences([seed_text])[0]
+        
+        # padd the token seq
+        seed_pad    = np.array(pad_sequences([seed_tokens], maxlen=max_sequence_len-1, padding='pre'))
+        
+        # predict the next word
+        predicted   = model.predict_classes(seed_pad, verbose=0)
+
+        next_word = ''
+        for word,index in tokenizer.word_index.items():
+            if index == predicted:
+                next_word = word
+                break
+        seed_text = seed_text + ' ' + next_word
+
+        max_words = max_words - 1
+        
+        if verbose > 1:
+            print('max_words: {}, next_word: {}'.format(max_words, next_word))
+        elif verbose > 0:
+            print(max_words)
+    
+    return seed_text
+
+def get_model(max_sequence_len, total_words):
+    '''
+    Define DNN structure
+    '''
+    input_len = max_sequence_len - 1
+    
+    model     = Sequential()
+    
+    # Add Input Embedding Layer
+    model.add(Embedding(total_words, dnn_config['embed_dim'], input_length=input_len))
+    
+    # Add Hidden Layer 1 - LSTM Layer
+    model.add(LSTM(dnn_config['lstm_units']))
+    
+    model.add(Dropout(dnn_config['dropout']))
+    
+    # Add Output Layer
+    model.add(Dense(total_words, activation='softmax'))
+
+    # model compile
+    optimizer = optimizers.Adam(learning_rate=dnn_config['lr_start'])
+    model.compile(loss=dnn_config['loss'], optimizer=optimizer, metrics=['acc'])
+    
     return model

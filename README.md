@@ -19,3 +19,5 @@ Build a deep-learning model, with the "Transformer" architecture, which can take
 
 2. Convert MIDI file to sheet-music (notations), and vice versa (https://towardsdatascience.com/how-to-generate-music-using-a-lstm-neural-network-in-keras-68786834d4c5)
     - Employ the music21 package (https://web.mit.edu/music21/doc/index.html)
+
+3. Convert m4a to midi: https://www.conversion-tool.com/audiotomidi/#uploadProgress
